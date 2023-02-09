@@ -4,6 +4,7 @@ import * as rm from "typed-rest-client/RestClient"
 import { existsSync, readFileSync } from "fs";
 
 import ora from "ora"
+import { Message } from "@cryb/mesa";
 
 export declare type RestVersion = {
     appVersion: number;
