@@ -1,7 +1,40 @@
 import prompts from 'prompts';
 import BaseCommand from '../../BaseCommand';
 
-export declare type GooggleAccount = {}
+declare type Names = {
+    fullname: string
+    firstname: string
+    lastname: string
+}
+
+declare type ProfileInfo = {
+    userType: string
+}
+
+declare type Emails = {
+    value: string
+}
+
+declare type ProfilePhoto = {
+    url?: string
+    isDefault?: boolean
+    flathash?: string
+}
+
+declare type Profile = {
+    fullname: string
+    personId: string
+    lastUpdated: string
+    profilePhoto?: ProfilePhoto
+    profileInfo?: ProfileInfo
+    emails: Emails
+    names: Names
+
+}
+
+export declare type GooggleAccount = {
+    profile?: Profile
+}
 
 export default class GhuntOsint extends BaseCommand {
     static description: "Gather information from a gmail address."
@@ -32,14 +65,40 @@ export default class GhuntOsint extends BaseCommand {
             message: "Type"
         });
 
-        let email = await prompts({
-            name: 'Email',
+        let identifier = await prompts({
+            name: 'Identifier',
             type: "text",
-            message: "Email"
+            message: "Email / GaiaID / Drive"
         });
 
-        await this.get<GooggleAccount>(`/api/osint/ghunt/${type.Action}/${email.Email}`).then(result => { 
-            this.error("Not Implemented Yet.")
+        this.send(type.Action, identifier.Identifier)
+    }
+
+    private send(type: string, identifier: string) {
+        this.post<GooggleAccount>('/api/osint/ghunt', {
+            payload: type.toUpperCase(),
+            data: {
+                identifier: identifier
+            }
+        }).then(async result => {
+            if (result.status) {
+                switch (type) {
+                    case "email": {
+                        // TODO: make a data formater.
+                    }
+                        break
+                    case "gaia": {
+
+                    }
+                        break
+                    case "drive": {
+
+                    }
+                        break
+                }
+            } else {
+                this.error("Error occurred : " + result?.error)
+            }
         })
     }
 }

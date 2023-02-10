@@ -26,7 +26,8 @@ export default class LoginSession extends BaseCommand {
         await this.login(username.Username, password.Password).then(result => {
             if (result.response.request.result?.status) {
                 this.save("session", result.response.request.result?.data)
-                result.response.spinner.succeed("You are now logged.")
+                this.log("[+] identifier: " + result.response.request.result?.data?.accessToken.split('-')[1] + "/" + result.response.request.result?.data?.clientToken.split('-')[1])
+                result.response.spinner.succeed("You are now logged with " + username.Username)
                 this.exit(0)
             } else {
                 this.error("The username or password is invalid!")

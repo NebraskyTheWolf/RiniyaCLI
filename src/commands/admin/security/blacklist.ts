@@ -1,5 +1,7 @@
 import prompts from 'prompts';
+import { PostResponse } from '../../Base';
 import BaseCommand from '../../BaseCommand';
+import { GooggleAccount } from '../../osint/google/ghunt';
 
 export declare type Blacklist = {
     userId: string;
@@ -44,15 +46,20 @@ export default class BlacklistCommand extends BaseCommand {
 
         switch (action.Action) {
             case "blacklist:add": {
-                this.send("add", accountId.TargetId)
+                let reason = await prompts({
+                    name: 'Reason',
+                    type: "text",
+                    message: "Reasons"
+                });
+                this.send("add", accountId.TargetId, reason.Reason)
             }
                 break
             case "blacklist:status": {
-                this.send("status", accountId.TargetId)
+                this.send("status", accountId.TargetId, "")
             }
                 break
             case "blacklist:remove": {
-                this.send("remove", accountId.TargetId)
+                this.send("remove", accountId.TargetId, "")
             }
                 break
             default:
@@ -60,35 +67,49 @@ export default class BlacklistCommand extends BaseCommand {
         }
     }
 
-    private send(type: string, accountId: string): void {
-        this.get<Blacklist>(`/api/guilds/blacklist/${type}/${accountId}`).then(result => {
-            if (type !== "status")
-                if (result.response.request.result?.status)
-                    result.response.spinner.succeed(`${type} action for ${accountId}.`)
-                else
-                    this.error("The request has failed.")
-            else {
-                const table = this.makeTable({
-                    title: "Blacklist status of " + accountId,
-                    columns: [
-                        { name: 'user_id', alignment: 'center', color: 'red' },
-                        { name: 'case_id', alignment: 'center', color: 'red' },
-                        { name: 'reason', alignment: 'center', color: 'red' },
-                        { name: 'issued_by', alignment: 'center', color: 'red' },
-                        { name: 'created_at', alignment: 'center', color: 'red' },
-                    ]
-                });
-                const data = result.response.request.result?.data
-                table.addRows({
-                    user_id: data?.userId,
-                    case_id: data?.caseId,
-                    reason: data?.reason,
-                    issued_by: data?.issuedBy,
-                    created_at: data?.registeredAt
-                })
-                table.printTable()
-                result.response.spinner.succeed("The datatable is ready.")
+    private send(type: string, accountId: string, reason?: string): void {
+        this.post<Blacklist>("/api/security/blacklist", {
+            payload: type.toUpperCase(),
+            data: {
+                userId: accountId,
+                reason: reason
+            }
+        }).then(async response => {
+            if (response.status) {
+                this.log("[+] Payload successfully executed.")
+                if (type === 'status')
+                    this.generate(accountId, response.data)
+                this.sendPacket({
+                    payload: "blacklist/" + type,
+                    data: {
+                        userId: accountId
+                    }
+                }, "PAYLOAD")
+            } else {
+                this.error("Error occurred : " + response.error)
             }
         })
+    }
+
+    private generate(id: string, response?: Blacklist) : void {
+        this.makeTable({
+            title: "Blacklist status of " + id,
+            columns: [
+                { name: 'user_id', alignment: 'center', color: 'red' },
+                { name: 'case_id', alignment: 'center', color: 'red' },
+                { name: 'reason', alignment: 'center', color: 'red' },
+                { name: 'issued_by', alignment: 'center', color: 'red' },
+                { name: 'created_at', alignment: 'center', color: 'red' },
+            ],
+            rows: [
+                {
+                    user_id: response?.userId,
+                    case_id: response?.caseId,
+                    reason: response?.reason,
+                    issued_by: response?.issuedBy,
+                    created_at: response?.registeredAt
+                }
+            ]
+        }).printTable()
     }
 }
