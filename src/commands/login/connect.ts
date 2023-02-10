@@ -1,11 +1,5 @@
 import prompts from 'prompts';
-import * as rm from "typed-rest-client/RestClient"
-import BaseCommand, { RestResult } from '../BaseCommand';
-
-import { writeFileSync } from 'fs';
-
-import ora from "ora"
-import { Message } from '@cryb/mesa';
+import BaseCommand from '../BaseCommand';
 
 export declare type Data = {
     accessToken: string;
@@ -20,7 +14,7 @@ export default class LoginSession extends BaseCommand {
         let username = await prompts({
             name: 'Username',
             type: "text",
-            message: "Username"
+            message: "Username",
         });
 
         let password = await prompts({
@@ -29,33 +23,14 @@ export default class LoginSession extends BaseCommand {
             message: "Password"
         });
 
-        var spinner = ora("Contacting RiniyaAPI.").start()
-
-        const session: rm.IRestResponse<RestResult<Data>> = await this.restClient.get<RestResult<Data>>('/api', {
-            additionalHeaders: {
-                "X-API-SCOPE": "login",
-                "X-API-USERNAME": username.Username,
-                "X-API-PASSWORD": password.Password
+        await this.login(username.Username, password.Password).then(result => {
+            if (result.response.request.result?.status) {
+                this.save("session", result.response.request.result?.data)
+                result.response.spinner.succeed("You are now logged.")
+                this.exit(0)
+            } else {
+                this.error("The username or password is invalid!")
             }
-        });
-        if (session.result?.status) {
-            writeFileSync('session.json', JSON.stringify({
-                accessToken: session.result.data?.accessToken,
-                clientToken: session.result.data?.clientToken
-            }))
-            this.websocket.send(new Message(0, {
-                status: true,
-                username: username
-            }, "AUTHENTICATION"))
-            spinner.succeed("You are now logged.")
-            this.exit(0)
-        } else {
-            this.websocket.send(new Message(0, {
-                status: false,
-                username: username
-            }, "AUTHENTICATION"))
-            spinner.fail("The username or password is invalid.")
-            this.exit(0)
-        }
+        })
     }
 }

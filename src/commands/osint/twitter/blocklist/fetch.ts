@@ -1,11 +1,8 @@
 import prompts from 'prompts';
 import * as rm from "typed-rest-client/RestClient"
-import BaseCommand, { Credentials, RestResult } from '../../../BaseCommand';
+import BaseCommand from '../../../BaseCommand';
 
-import ora from "ora"
-import { Table } from 'console-table-printer';
-
-export declare type Account = {
+declare type TwitterAccount = {
     created_at?: string;
     location?: string;
     name: string;
@@ -17,17 +14,13 @@ export default class FetchBackend extends BaseCommand {
     static description: "Fetch account by id on twitter."
 
     async run() {
-        const user: Credentials = this.authenticate();
-
         let accountId = await prompts({
             name: 'accountId',
             type: "text",
             message: "Account id"
         });
 
-        var spinner = ora("Contacting RiniyaAPI.").start()
-
-        const table: Table = new Table({
+        const table = this.makeTable({
             title: "Twitter Account",
             columns: [
                 { name: 'created_at', alignment: 'center', color: 'red' },
@@ -38,28 +31,23 @@ export default class FetchBackend extends BaseCommand {
             ]
         })
 
-        const session: rm.IRestResponse<RestResult<Account>> = await this.restClient.get<RestResult<Account>>(`/block-list/fetch/${accountId.accountId}`, {
-            additionalHeaders: {
-                "X-API-SCOPE": "identify",
-                "accessToken": user.accessToken,
-                "clientToken": user.clientToken
+        await this.get<TwitterAccount>(`/api/block-list/fetch/${accountId.accountId}`).then(result => {
+            if (result.response.request.result?.status) {
+                const account = result.response.request.result.data
+                table.addRow({
+                    created_at: account?.created_at || "Impossible to get the `created_at` variable.",
+                    name: account?.name,
+                    username: account?.username,
+                    location: account?.location || "Location is not set.",
+                    protected: account?.protected || "This account is not protected."
+                })
+
+                table.printTable()
+                result.response.spinner.succeed("The datatable is loaded.")
+                this.exit(0)
+            } else {
+                this.error("Error occurred during the proccess.")
             }
-        });
-        if (session.result?.status) {
-            const account = session.result.data;
-            spinner.succeed("The datatable is loaded.")
-            
-            table.addRow({
-                created_at: account?.created_at,
-                name: account?.name,
-                username: account?.username,
-                location: account?.location,
-                protected: account?.protected
-            })
-            this.exit(0)
-        } else {
-            spinner.fail("The request has been aborted.")
-            this.exit(0)
-        }
+        })
     }
 }
