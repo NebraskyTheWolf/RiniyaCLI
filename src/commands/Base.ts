@@ -96,13 +96,12 @@ export default abstract class Base extends Command {
 
     protected async post<T>(route: string, data: any): Promise<RestResult<T>> {
         const user: Login = this.fetchSession()
-        const response = await this.restClient.client.post(route, JSON.stringify(data), {
-            additionalHeaders: {
-                "X-API-SCOPE": "identify",
-                "accessToken": user.accessToken,
-                "clientToken": user.clientToken
-            }
+        const response = await this.restClient.client.post("https://api.ghidorah.uk" + route, JSON.stringify(data), {
+            "X-API-SCOPE": "identify",
+            "accessToken": user.accessToken,
+            "clientToken": user.clientToken
         })
+
         const result: RestResult<T> = JSON.parse(await response.readBody())
         return {
             status: result.status,
@@ -114,11 +113,9 @@ export default abstract class Base extends Command {
     protected async patch<T>(route: string, data: any): Promise<RestResult<T>> {
         const user: Login = this.fetchSession()
         const response = await this.restClient.client.patch(route, JSON.stringify(data), {
-            additionalHeaders: {
-                "X-API-SCOPE": "identify",
-                "accessToken": user.accessToken,
-                "clientToken": user.clientToken
-            }
+            "X-API-SCOPE": "identify",
+            "accessToken": user.accessToken,
+            "clientToken": user.clientToken
         })
         const result: RestResult<T> = JSON.parse(await response.readBody())
         return {
@@ -131,11 +128,9 @@ export default abstract class Base extends Command {
     protected async put<T>(route: string, data: any): Promise<RestResult<T>> {
         const user: Login = this.fetchSession()
         const response = await this.restClient.client.put(route, JSON.stringify(data), {
-            additionalHeaders: {
-                "X-API-SCOPE": "identify",
-                "accessToken": user.accessToken,
-                "clientToken": user.clientToken
-            }
+            "X-API-SCOPE": "identify",
+            "accessToken": user.accessToken,
+            "clientToken": user.clientToken
         })
         const result: RestResult<T> = JSON.parse(await response.readBody())
         return {
@@ -148,11 +143,9 @@ export default abstract class Base extends Command {
     protected async head<T>(route: string, data: any): Promise<RestResult<T>> {
         const user: Login = this.fetchSession()
         const response = await this.restClient.client.head(route, {
-            additionalHeaders: {
-                "X-API-SCOPE": "identify",
-                "accessToken": user.accessToken,
-                "clientToken": user.clientToken
-            }
+            "X-API-SCOPE": "identify",
+            "accessToken": user.accessToken,
+            "clientToken": user.clientToken
         })
         const result: RestResult<T> = JSON.parse(await response.readBody())
         return {
@@ -165,11 +158,9 @@ export default abstract class Base extends Command {
     protected async options<T>(route: string): Promise<RestResult<T>> {
         const user: Login = this.fetchSession()
         const response = await this.restClient.client.options(route, {
-            additionalHeaders: {
-                "X-API-SCOPE": "identify",
-                "accessToken": user.accessToken,
-                "clientToken": user.clientToken
-            }
+            "X-API-SCOPE": "identify",
+            "accessToken": user.accessToken,
+            "clientToken": user.clientToken
         })
         const result: RestResult<T> = JSON.parse(await response.readBody())
         return {

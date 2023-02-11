@@ -18,8 +18,12 @@ export default class PhoneCheck extends BaseCommand {
             message: "Phone number"
         });
 
+        this.spinner.setText(`Searching ${phone.Phone} with numverify.com.`)
+            .setSpinner("dots")
+            .setColor("red").start()
+
         this.post<PhoneCarrier>('/api/osint/phone', {
-            identifier: phone.Phone
+            identifier: phone.Phone || "No phone"
         }).then(async result => {
             if (result.status) {
                 this.makeTable({
@@ -39,8 +43,10 @@ export default class PhoneCheck extends BaseCommand {
                         }
                     ]
                 }).printTable()
+                this.spinner.fetch().succeed()
             } else {
-                this.error("Error occurred : " + result.error)
+                this.spinner.fetch().fail("Server error : " + result.error)
+                this.exit(0)
             }
         })
     }
